@@ -8,8 +8,3 @@ dis_dense_activation = tf.nn.relu
 
 # optimizer used in  model
 opt = tf.train.AdamOptimizer
-
-# learning rate
-lr = 0.0001
-batch_size = 128
-epoch = 100

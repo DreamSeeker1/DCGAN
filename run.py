@@ -3,9 +3,10 @@ import tensorflow as tf
 import numpy as np
 import model.gen
 import model.dis
-import model.params as params
+import model.params as mparams
 import data_utils.tf_utils
 from PIL import Image
+import params
 
 
 def get_labels(gen_pics, real_pics):
@@ -40,42 +41,59 @@ with graph.as_default():
     label = get_labels(gen_pics, pics_input)
     # go through the discriminator
     dis_logits = model.dis.discriminator(tf.concat([gen_pics, pics_input], axis=0))
-    # compute loss
+    # compute discriminator loss
     discriminator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=label, logits=dis_logits))
-    generator_loss = -discriminator_loss
+    # compute generator loss
+    # in this part we mark the label of fake pics as true, go through the discriminator and calculate loss
+    generator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=label[params.batch_size:],
+                                                                            logits=dis_logits[:params.batch_size]))
 
     # define the optimizer used to train the discriminator
     dis_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
-    dis_opt = params.opt(params.lr)
+    dis_opt = mparams.opt(params.lr)
     dis_grads_and_vars = dis_opt.compute_gradients(discriminator_loss, var_list=dis_vars)
     dis_capped_grads_and_vars = [(tf.clip_by_norm(gv[0], clip_norm=5.), gv[1]) for gv in dis_grads_and_vars]
     dis_opt_op = dis_opt.apply_gradients(dis_capped_grads_and_vars)
 
     # define the optimizer used to train the generator
     gen_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Generator')
-    gen_opt = params.opt(params.lr)
+    gen_opt = mparams.opt(params.lr)
     gen_grads_and_vars = dis_opt.compute_gradients(generator_loss, var_list=gen_vars)
     gen_capped_grads_and_vars = [(tf.clip_by_norm(gv[0], clip_norm=5.), gv[1]) for gv in gen_grads_and_vars]
     gen_opt_op = gen_opt.apply_gradients(gen_capped_grads_and_vars)
 
 # define the session to run the training process
 with tf.Session(graph=graph) as sess:
+    # define step
+    step = 0
     init = tf.global_variables_initializer()
     sess.run(init)
     for epoch in range(params.epoch):
         sess.run(iterator.initializer)
+        epoch_end = False
         while True:
-            try:
-                pics_in = sess.run(next_element)
-                gen_in = np.random.rand(params.batch_size, 4 * 4 * 1024)
-            except tf.errors.OutOfRangeError:
-                break
+            pics_in = None
             for i in range(5):
-                _, loss = sess.run([dis_opt_op, discriminator_loss], {gen_input: gen_in, pics_input: pics_in})
-                print('Discriminator Loss: {:.4f}'.format(loss))
-            _, loss, pic = sess.run([gen_opt_op, generator_loss, gen_pics],
-                                    {gen_input: gen_in, pics_input: pics_in})
-            img = Image.fromarray(pic[0], 'RGB')
-            img.save('%d.png' % epoch)
-            print('Generator Loss {:.4f}'.format(loss))
-            print('save')
+                try:
+                    pics_in = sess.run(next_element)
+                    gen_in = np.random.rand(params.batch_size, 4 * 4 * 1024)
+                    _ = sess.run([dis_opt_op], {gen_input: gen_in, pics_input: pics_in})
+                except tf.errors.OutOfRangeError:
+                    epoch_end = True
+                    break
+                step += 1
+
+            if epoch_end:
+                break
+            gen_in = np.random.rand(params.batch_size, 4 * 4 * 1024)
+            _ = sess.run([gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
+
+            if step % params.display_step == 0:
+                gen_loss, dis_loss, pics = sess.run([generator_loss, discriminator_loss, gen_pics],
+                                                    {gen_input: gen_in, pics_input: pics_in})
+                pic = pics[0]
+                img = Image.fromarray(pic[0, :], 'RGB')
+                img.save('Epoch-{}-Step-{}.png'.format(epoch, step))
+                print(
+                    'Epoch:{}, Step:{}, Generator Loss {:.4f}, Discriminator Loss:{:.4f}'.format(epoch, step, gen_loss,
+                                                                                                 dis_loss))
