@@ -45,7 +45,8 @@ with graph.as_default():
     discriminator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=label, logits=dis_logits))
     # compute generator loss
     # in this part we mark the label of fake pics as true, go through the discriminator and calculate loss
-    generator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=label[params.batch_size:],
+    fake_labels = tf.tile(tf.constant([[0., 1.]], dtype=tf.float32), [tf.shape(gen_pics)[0], 1])
+    generator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=fake_labels,
                                                                             logits=dis_logits[:params.batch_size]))
 
     # define the optimizer used to train the discriminator
@@ -81,7 +82,7 @@ with tf.Session(graph=graph) as sess:
                 except tf.errors.OutOfRangeError:
                     epoch_end = True
                     break
-                step += 1
+            step += 1
 
             if epoch_end:
                 break
@@ -92,8 +93,8 @@ with tf.Session(graph=graph) as sess:
                 gen_loss, dis_loss, pics = sess.run([generator_loss, discriminator_loss, gen_pics],
                                                     {gen_input: gen_in, pics_input: pics_in})
                 pic = pics[0]
-                img = Image.fromarray(pic[0, :], 'RGB')
-                img.save('Epoch-{}-Step-{}.png'.format(epoch, step))
+                img = Image.fromarray(pic, 'RGB')
+                img.save('Epoch-{}-Step-{}.jpg'.format(epoch, step))
                 print(
                     'Epoch:{}, Step:{}, Generator Loss {:.4f}, Discriminator Loss:{:.4f}'.format(epoch, step, gen_loss,
                                                                                                  dis_loss))
