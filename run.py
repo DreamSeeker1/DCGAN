@@ -7,10 +7,11 @@ import model.params as mparams
 import data_utils.tf_utils
 from PIL import Image
 import params
+import os
 
 
 def get_labels(gen_pics, real_pics):
-    """Generate labels of input pics
+    """Generate true labels of input pics
     Args:
         gen_pics: generated pics
         real_pics: real pics
@@ -45,9 +46,16 @@ with graph.as_default():
     discriminator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=label, logits=dis_logits))
     # compute generator loss
     # in this part we mark the label of fake pics as true, go through the discriminator and calculate loss
-    fake_labels = tf.tile(tf.constant([[0., 1.]], dtype=tf.float32), [tf.shape(gen_pics)[0], 1])
+    fake_labels = tf.tile(tf.constant([[1., 0.]], dtype=tf.float32), [tf.shape(gen_pics)[0], 1])
     generator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=fake_labels,
                                                                             logits=dis_logits[:params.batch_size]))
+    # add summary
+    tf.summary.scalar('Generator_loss', generator_loss)
+    tf.summary.scalar('Discriminator_loss', discriminator_loss)
+    merged = tf.summary.merge_all()
+
+    # define the saver to save the variables
+    saver = tf.train.Saver(max_to_keep=params.max_model_number)
 
     # define the optimizer used to train the discriminator
     dis_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
@@ -65,6 +73,7 @@ with graph.as_default():
 
 # define the session to run the training process
 with tf.Session(graph=graph) as sess:
+    summary_writer = tf.summary.FileWriter('./Graph', sess.graph)
     # define step
     step = 0
     init = tf.global_variables_initializer()
@@ -74,6 +83,7 @@ with tf.Session(graph=graph) as sess:
         epoch_end = False
         while True:
             pics_in = None
+            gen_in = None
             for i in range(5):
                 try:
                     pics_in = sess.run(next_element)
@@ -83,12 +93,14 @@ with tf.Session(graph=graph) as sess:
                     epoch_end = True
                     break
             step += 1
-
+            # add summary
+            summary = sess.run(merged, {gen_input: gen_in, pics_input: pics_in})
+            summary_writer.add_summary(summary, step)
+            saver.save(sess, save_path='./checkpoint/model.ckpt', global_step=step)
             if epoch_end:
                 break
             gen_in = np.random.rand(params.batch_size, 4 * 4 * 1024)
             _ = sess.run([gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
-
             if step % params.display_step == 0:
                 gen_loss, dis_loss, pics = sess.run([generator_loss, discriminator_loss, gen_pics],
                                                     {gen_input: gen_in, pics_input: pics_in})
