@@ -1,5 +1,5 @@
 .idea
 *.pyc
 pics/
-graph/
+Graph/
 checkpoint/
