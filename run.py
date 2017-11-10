@@ -97,7 +97,7 @@ with tf.Session(graph=graph) as sess:
         while True:
             pics_in = None
             gen_in = None
-            for i in range(5):
+            for i in range(params.k):
                 # train the discriminator
                 try:
                     pics_in = sess.run(next_element)
