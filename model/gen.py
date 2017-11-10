@@ -13,7 +13,7 @@ def generator(input_batch):
     """
     with tf.variable_scope('Generator'):
         # project and reshape
-        layer1 = tf.layers.dense(input_batch, bias_initializer=tf.truncated_normal_initializer, units=4 * 4 * 1024)
+        layer1 = tf.layers.dense(input_batch, units=4 * 4 * 1024)
         reshape_input = tf.reshape(layer1, shape=(-1, 4, 4, 1024))
 
         # convolution transpose
