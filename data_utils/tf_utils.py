@@ -11,9 +11,22 @@ import os
 # to a fixed shape.
 def _parse_function(filename):
     image_string = tf.read_file(filename)
-    image_decoded = tf.image.decode_jpeg(image_string)
+    image_decoded = tf.image.decode_jpeg(image_string, 3)
     image_resized = tf.image.resize_images(image_decoded, [64, 64])
     return image_resized
+
+
+def helper(path_list):
+    """A small helper used to concat the path
+    Args:
+        path_list: a list of path
+    Returns:
+        concat_path: the concatenated path
+    """
+    concat_path = path_list[0]
+    for i in path_list[1:]:
+        concat_path = os.path.join(concat_path, i)
+    return concat_path
 
 
 def get_pics(data_path):
@@ -23,12 +36,15 @@ def get_pics(data_path):
     Returns:
         dataset: the pics that have been resized
     """
+    pic_list = []
     try:
-        pic_list = os.listdir(data_path)
+        tmp_list = list(map(lambda x: helper([data_path, x]), os.listdir(data_path)))
+        for pic_folder in tmp_list:
+            pic_list += list(map(lambda x: helper([pic_folder, x]), os.listdir(pic_folder)))
     except ValueError:
         print('Path not found')
         return
-    filename = tf.constant(list(map(lambda x: os.path.join(data_path, x), pic_list)))
+    filename = tf.constant(pic_list)
     dataset = tf.data.Dataset.from_tensor_slices(filename)
     dataset = dataset.map(_parse_function)
     return dataset

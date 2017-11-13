@@ -38,7 +38,7 @@ with graph.as_default():
     next_element = iterator.get_next()
 
     # define the place holder for the input.
-    gen_input = tf.placeholder(dtype=tf.float32, shape=(None, 4 * 4 * 1024))
+    gen_input = tf.placeholder(dtype=tf.float32, shape=(None, 100))
     pics_input = tf.placeholder(dtype=tf.float32, shape=(None, 64, 64, 3))
     # generate pictures
     gen_pics = model.gen.generator(gen_input)
@@ -101,15 +101,16 @@ with tf.Session(graph=graph) as sess:
                 # train the discriminator
                 try:
                     pics_in = sess.run(next_element)
-                    gen_in = np.random.rand(params.batch_size, 4 * 4 * 1024)
+                    # train the generator, use 100 dimensional uniform distribution
+                    gen_in = np.random.uniform(size=(params.batch_size, 100))
                     _ = sess.run([dis_opt_op], {gen_input: gen_in, pics_input: pics_in})
                 except tf.errors.OutOfRangeError:
                     epoch_end = True
                     break
             if epoch_end:
                 break
-            # train the generator
-            gen_in = np.random.rand(params.batch_size, 4 * 4 * 1024)
+            # train the generator, use 100 dimensional uniform distribution
+            gen_in = np.random.uniform(size=(params.batch_size, 100))
             _ = sess.run([gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
             step += 1
             # log summary
