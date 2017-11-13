@@ -20,7 +20,7 @@ def get_labels(gen_pics, real_pics):
         gen_pics: generated pics
         real_pics: real pics
     Returns:
-        labels: a tensor of 0 and 1, 0 for generated, 1 for real pics
+        labels: a tensor of 0 and 1, [0, 1] for generated, [1, 0] for real pics
     """
     gen_pics_label = tf.tile(tf.constant([[0, 1]], dtype=tf.int32), [tf.shape(gen_pics)[0], 1])
     real_pics_label = tf.tile(tf.constant([[1, 0]], dtype=tf.int32), [tf.shape(real_pics)[0], 1])
@@ -111,12 +111,10 @@ with tf.Session(graph=graph) as sess:
                 break
             # train the generator, use 100 dimensional uniform distribution
             gen_in = np.random.uniform(size=(params.batch_size, 100))
-            _ = sess.run([gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
+            summary, _ = sess.run([merged, gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
             step += 1
             # log summary
-            summary = sess.run(merged, {gen_input: gen_in, pics_input: pics_in})
             summary_writer.add_summary(summary, step)
-            saver.save(sess, save_path='./checkpoint/model.ckpt', global_step=step)
 
             if step % params.display_step == 0:
                 gen_loss, dis_loss, pics, err_rate = sess.run(
@@ -132,3 +130,4 @@ with tf.Session(graph=graph) as sess:
                         dis_loss,
                         err_rate
                     ))
+        saver.save(sess, save_path='./checkpoint/model.ckpt', global_step=step)
