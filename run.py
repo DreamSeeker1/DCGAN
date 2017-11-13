@@ -64,7 +64,6 @@ with graph.as_default():
         dis_grads_and_vars = dis_opt.compute_gradients(discriminator_loss, var_list=dis_vars)
         dis_capped_grads_and_vars = [(tf.clip_by_norm(gv[0], clip_norm=5.), gv[1]) for gv in dis_grads_and_vars]
         dis_opt_op = dis_opt.apply_gradients(dis_capped_grads_and_vars)
-
     with tf.name_scope('train_generator'):
         # define the optimizer used to train the generator
         gen_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Generator')
@@ -102,7 +101,7 @@ with tf.Session(graph=graph) as sess:
                 try:
                     pics_in = sess.run(next_element)
                     # train the generator, use 100 dimensional uniform distribution
-                    gen_in = np.random.uniform(size=(params.batch_size, 100))
+                    gen_in = np.random.uniform(0., 1., size=(params.batch_size, 100))
                     _ = sess.run([dis_opt_op], {gen_input: gen_in, pics_input: pics_in})
                 except tf.errors.OutOfRangeError:
                     epoch_end = True
@@ -110,7 +109,7 @@ with tf.Session(graph=graph) as sess:
             if epoch_end:
                 break
             # train the generator, use 100 dimensional uniform distribution
-            gen_in = np.random.uniform(size=(params.batch_size, 100))
+            gen_in = np.random.uniform(0., 1., size=(params.batch_size, 100))
             summary, _ = sess.run([merged, gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
             step += 1
             # log summary
@@ -120,7 +119,7 @@ with tf.Session(graph=graph) as sess:
                 gen_loss, dis_loss, pics, err_rate = sess.run(
                     [generator_loss, discriminator_loss, gen_pics, error_rate],
                     {gen_input: gen_in, pics_input: pics_in})
-                pic = pics[0]
+                pic = (pics[0] * 255.).astype('uint8')
                 img = Image.fromarray(pic, 'RGB')
                 img.save(os.path.join(params.output_folder, 'Epoch-{}-Step-{}.jpg'.format(epoch, step)))
                 print(
