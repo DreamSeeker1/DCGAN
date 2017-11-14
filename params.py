@@ -1,8 +1,8 @@
 # learning rate
-lr = 0.0002
+lr = 0.0001
 batch_size = 128
 epoch = 10000
-display_step = 5
+display_step = 1
 max_model_number = 15
 output_folder = './output'
 

@@ -20,10 +20,10 @@ def get_labels(gen_pics, real_pics):
         gen_pics: generated pics
         real_pics: real pics
     Returns:
-        labels: a tensor of 0 and 1, [0, 1] for generated, [1, 0] for real pics
+        labels: a tensor of 0 and 1, 0 for generated, 1 for real pics
     """
-    gen_pics_label = tf.tile(tf.constant([[0, 1]], dtype=tf.int32), [tf.shape(gen_pics)[0], 1])
-    real_pics_label = tf.tile(tf.constant([[1, 0]], dtype=tf.int32), [tf.shape(real_pics)[0], 1])
+    gen_pics_label = tf.zeros(shape=[tf.shape(gen_pics)[0], ], dtype=tf.int32)
+    real_pics_label = tf.ones(shape=[tf.shape(real_pics)[0], ], dtype=tf.int32)
     labels = tf.concat(
         [gen_pics_label, real_pics_label], axis=0)
     return labels
@@ -47,36 +47,36 @@ with graph.as_default():
     # go through the discriminator
     dis_logits = model.dis.discriminator(tf.concat([gen_pics, pics_input], axis=0))
     # compute discriminator loss
-    discriminator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=label, logits=dis_logits))
+    discriminator_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label, logits=dis_logits))
     # compute generator loss
     # in this part we mark the label of fake pics as true, go through the discriminator and calculate loss
-    fake_labels = tf.tile(tf.constant([[1, 0]], dtype=tf.int32), [tf.shape(gen_pics)[0], 1])
-    generator_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=fake_labels,
-                                                                            logits=dis_logits[:params.batch_size]))
+    fake_labels = tf.ones(shape=(tf.shape(gen_pics)[0],), dtype=tf.int32)
+    generator_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=fake_labels,
+                                                                                   logits=dis_logits[
+                                                                                          :params.batch_size]))
 
     # define the saver to save the variables
     saver = tf.train.Saver(max_to_keep=params.max_model_number)
 
-    with tf.name_scope('train_discriminator'):
+    with tf.variable_scope('train_discriminator'):
         # define the optimizer used to train the discriminator
         dis_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
         dis_opt = mparams.opt(params.lr)
         dis_grads_and_vars = dis_opt.compute_gradients(discriminator_loss, var_list=dis_vars)
-        dis_capped_grads_and_vars = [(tf.clip_by_norm(gv[0], clip_norm=5.), gv[1]) for gv in dis_grads_and_vars]
-        dis_opt_op = dis_opt.apply_gradients(dis_capped_grads_and_vars)
-    with tf.name_scope('train_generator'):
+        dis_opt_op = dis_opt.apply_gradients(dis_grads_and_vars)
+    with tf.variable_scope('train_generator'):
         # define the optimizer used to train the generator
         gen_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Generator')
         gen_opt = mparams.opt(params.lr)
         gen_grads_and_vars = dis_opt.compute_gradients(generator_loss, var_list=gen_vars)
-        gen_capped_grads_and_vars = [(tf.clip_by_norm(gv[0], clip_norm=5.), gv[1]) for gv in gen_grads_and_vars]
-        gen_opt_op = gen_opt.apply_gradients(gen_capped_grads_and_vars)
+        gen_opt_op = gen_opt.apply_gradients(gen_grads_and_vars)
 
-    # the prediction result of the discriminator when input is the fake data
-    # the higher the better
-    false_prediction = tf.equal(tf.argmax(dis_logits[:params.batch_size], 1, output_type=tf.int32),
-                                tf.argmax(fake_labels, 1, output_type=tf.int32))
-    error_rate = tf.reduce_mean(tf.cast(false_prediction, tf.float32))
+    # the prediction accuracy of the discriminator, when equals to 50%, it can't distinguish
+    # real and fake
+    prediction_result = tf.equal(tf.argmax(dis_logits, 1, output_type=tf.int32),
+                                 label)
+    error_rate = 1 - tf.reduce_mean(tf.cast(prediction_result, tf.float32))
+
     # add summary
     tf.summary.scalar('Generator_loss', generator_loss)
     tf.summary.scalar('Discriminator_loss', discriminator_loss)
@@ -101,7 +101,7 @@ with tf.Session(graph=graph) as sess:
                 try:
                     pics_in = sess.run(next_element)
                     # train the generator, use 100 dimensional uniform distribution
-                    gen_in = np.random.uniform(0., 1., size=(params.batch_size, 100))
+                    gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
                     _ = sess.run([dis_opt_op], {gen_input: gen_in, pics_input: pics_in})
                 except tf.errors.OutOfRangeError:
                     epoch_end = True
@@ -109,7 +109,7 @@ with tf.Session(graph=graph) as sess:
             if epoch_end:
                 break
             # train the generator, use 100 dimensional uniform distribution
-            gen_in = np.random.uniform(0., 1., size=(params.batch_size, 100))
+            gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
             summary, _ = sess.run([merged, gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
             step += 1
             # log summary
