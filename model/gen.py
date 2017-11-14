@@ -13,8 +13,7 @@ def generator(input_batch):
     """
     with tf.variable_scope('Generator'):
         # add batch normalization
-        input_batch = tf.nn.batch_normalization(input_batch, name='add_batch_normalization_for_generator', mean=0.,
-                                                variance=1., offset=None, scale=None, variance_epsilon=1e-12)
+        input_batch = tf.contrib.layers.batch_norm(input_batch)
         # project and reshape
         layer1 = tf.layers.dense(input_batch, units=4 * 4 * 1024)
         reshape_input = tf.reshape(layer1, shape=(-1, 4, 4, 1024))
@@ -36,5 +35,6 @@ def generator(input_batch):
         pics_batch = tf.layers.conv2d_transpose(conv3_trans, filters=3, kernel_size=5, strides=(2, 2),
                                                 padding='same',
                                                 bias_initializer=tf.truncated_normal_initializer,
-                                                activation=params.gen_output_activation, name='conv4_trans')
+                                                activation=params.gen_activation, name='conv4_trans')
+        pics_batch = params.gen_output_activation(pics_batch)
         return pics_batch

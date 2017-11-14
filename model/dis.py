@@ -11,8 +11,8 @@ def discriminator(input_pics):
         logits: the logits of the model
     """
     with tf.variable_scope('Discriminator'):
-        # normalize the input by dividing 255.
-        input_pics = input_pics / 255.
+        # use the batch norm
+        input_pics = tf.contrib.layers.batch_norm(input_pics)
         # convolution layers
         conv1_layer = tf.layers.conv2d(input_pics, filters=64, activation=params.dis_conv_activation, kernel_size=5,
                                        strides=2,

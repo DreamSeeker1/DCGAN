@@ -58,18 +58,20 @@ with graph.as_default():
     # define the saver to save the variables
     saver = tf.train.Saver(max_to_keep=params.max_model_number)
 
-    with tf.variable_scope('train_discriminator'):
-        # define the optimizer used to train the discriminator
-        dis_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
-        dis_opt = mparams.opt(params.lr)
-        dis_grads_and_vars = dis_opt.compute_gradients(discriminator_loss, var_list=dis_vars)
-        dis_opt_op = dis_opt.apply_gradients(dis_grads_and_vars)
-    with tf.variable_scope('train_generator'):
-        # define the optimizer used to train the generator
-        gen_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Generator')
-        gen_opt = mparams.opt(params.lr)
-        gen_grads_and_vars = dis_opt.compute_gradients(generator_loss, var_list=gen_vars)
-        gen_opt_op = gen_opt.apply_gradients(gen_grads_and_vars)
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    with tf.control_dependencies(update_ops):
+        with tf.variable_scope('train_discriminator'):
+            # define the optimizer used to train the discriminator
+            dis_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
+            dis_opt = mparams.opt(params.lr)
+            dis_grads_and_vars = dis_opt.compute_gradients(discriminator_loss, var_list=dis_vars)
+            dis_opt_op = dis_opt.apply_gradients(dis_grads_and_vars)
+        with tf.variable_scope('train_generator'):
+            # define the optimizer used to train the generator
+            gen_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Generator')
+            gen_opt = mparams.opt(params.lr)
+            gen_grads_and_vars = dis_opt.compute_gradients(generator_loss, var_list=gen_vars)
+            gen_opt_op = gen_opt.apply_gradients(gen_grads_and_vars)
 
     # the prediction accuracy of the discriminator, when equals to 50%, it can't distinguish
     # real and fake

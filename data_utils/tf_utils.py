@@ -12,7 +12,7 @@ import os
 def _parse_function(filename):
     image_string = tf.read_file(filename)
     image_decoded = tf.image.decode_jpeg(image_string, 3)
-    image_resized = tf.image.resize_images(image_decoded, [64, 64])
+    image_resized = tf.image.resize_images(image_decoded, [64, 64]) / 255.
     return image_resized
 
 
