@@ -121,7 +121,7 @@ with tf.Session(graph=graph) as sess:
                 gen_loss, dis_loss, pics, err_rate = sess.run(
                     [generator_loss, discriminator_loss, gen_pics, error_rate],
                     {gen_input: gen_in, pics_input: pics_in})
-                pic = (pics[0] * 255.).astype('uint8')
+                pic = ((pics[0] + 1.) / 2. * 255.).astype('uint8')
                 img = Image.fromarray(pic, 'RGB')
                 img.save(os.path.join(params.output_folder, 'Epoch-{}-Step-{}.jpg'.format(epoch, step)))
                 print(
