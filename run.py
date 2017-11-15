@@ -45,15 +45,16 @@ with graph.as_default():
     # add labels to real and fake data.
     label = get_labels(gen_pics, pics_input)
     # go through the discriminator
-    dis_logits = model.dis.discriminator(tf.concat([gen_pics, pics_input], axis=0))
+    dis_logits_fake = model.dis.discriminator(gen_pics, reuse=None)
+    dis_logits_real = model.dis.discriminator(pics_input, reuse=True)
+    dis_logits = tf.concat([dis_logits_fake, dis_logits_real], axis=0)
     # compute discriminator loss
     discriminator_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label, logits=dis_logits))
     # compute generator loss
     # in this part we mark the label of fake pics as true, go through the discriminator and calculate loss
     fake_labels = tf.ones(shape=(tf.shape(gen_pics)[0],), dtype=tf.int32)
     generator_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=fake_labels,
-                                                                                   logits=dis_logits[
-                                                                                          :params.batch_size]))
+                                                                                   logits=dis_logits_fake))
 
     # define the saver to save the variables
     saver = tf.train.Saver(max_to_keep=params.max_model_number)

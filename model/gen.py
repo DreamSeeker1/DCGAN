@@ -1,7 +1,7 @@
 """generator used to generate pictures"""
 
 import tensorflow as tf
-import params
+import model.params as params
 
 
 def generator(input_batch):

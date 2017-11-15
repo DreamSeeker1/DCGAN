@@ -1,16 +1,17 @@
 """Discriminator used to discriminate real pics from generated pics"""
 import tensorflow as tf
-import params
+import model.params as params
 
 
-def discriminator(input_pics):
+def discriminator(input_pics, reuse):
     """Discriminator
     Args:
         input_pics: the input pics, assume [batch_size, 64, 64, 3]
+        reuse: whether reuse the variables
     Returns:
         logits: the logits of the model
     """
-    with tf.variable_scope('Discriminator'):
+    with tf.variable_scope('Discriminator', reuse=reuse):
         # use the batch norm
         input_pics = tf.contrib.layers.batch_norm(input_pics)
         # convolution layers
