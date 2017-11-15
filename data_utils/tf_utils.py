@@ -5,13 +5,14 @@ from __future__ import print_function
 import tensorflow as tf
 import tensorflow.contrib as contrib
 import os
+import model.params as mparams
 
 
 # Reads an image from a file, decodes it into a dense tensor, and resizes it
 # to a fixed shape.
 def _parse_function(filename):
     image_string = tf.read_file(filename)
-    image_decoded = tf.image.decode_jpeg(image_string, 3)
+    image_decoded = tf.image.decode_jpeg(image_string, mparams.channel)
     image_resized = tf.image.resize_images(image_decoded, [64, 64]) / 255. * 2. - 1.
     return image_resized
 

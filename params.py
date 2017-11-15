@@ -7,4 +7,4 @@ max_model_number = 15
 output_folder = './output'
 
 # train discriminator for k times in a step
-k = 2
+k = 1

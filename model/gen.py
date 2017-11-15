@@ -32,7 +32,7 @@ def generator(input_batch):
                                                  bias_initializer=tf.truncated_normal_initializer,
                                                  activation=params.gen_activation, name='conv3_trans')
         # use Tanh in output layer
-        pics_batch = tf.layers.conv2d_transpose(conv3_trans, filters=3, kernel_size=5, strides=(2, 2),
+        pics_batch = tf.layers.conv2d_transpose(conv3_trans, filters=params.channel, kernel_size=5, strides=(2, 2),
                                                 padding='same',
                                                 bias_initializer=tf.truncated_normal_initializer,
                                                 activation=params.gen_activation, name='conv4_trans')

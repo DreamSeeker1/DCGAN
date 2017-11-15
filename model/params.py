@@ -9,3 +9,6 @@ dis_dense_activation = tf.nn.leaky_relu
 
 # optimizer used in  model
 opt = tf.train.AdamOptimizer
+
+# the number of channels
+channel = 1

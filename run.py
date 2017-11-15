@@ -39,7 +39,7 @@ with graph.as_default():
 
     # define the place holder for the input.
     gen_input = tf.placeholder(dtype=tf.float32, shape=(None, 100))
-    pics_input = tf.placeholder(dtype=tf.float32, shape=(None, 64, 64, 3))
+    pics_input = tf.placeholder(dtype=tf.float32, shape=(None, 64, 64, mparams.channel))
     # generate pictures
     gen_pics = model.gen.generator(gen_input)
     # add labels to real and fake data.
@@ -122,7 +122,11 @@ with tf.Session(graph=graph) as sess:
                     [generator_loss, discriminator_loss, gen_pics, error_rate],
                     {gen_input: gen_in, pics_input: pics_in})
                 pic = ((pics[0] + 1.) / 2. * 255.).astype('uint8')
-                img = Image.fromarray(pic, 'RGB')
+                if mparams.channel == 3:
+                    img = Image.fromarray(pic, 'RGB')
+                else:
+                    pic.resize(64, 64)
+                    img = Image.fromarray(pic, 'L')
                 img.save(os.path.join(params.output_folder, 'Epoch-{}-Step-{}.jpg'.format(epoch, step)))
                 print(
                     'Epoch: {}, Step: {}, Generator Loss: {:.4f}, Discriminator Loss:{:.4f}, Error Rate: {:.2%}'.format(
