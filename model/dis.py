@@ -34,8 +34,6 @@ def discriminator(input_pics, reuse):
 
         # reshape and project
         dense_input = tf.reshape(conv4_layer, shape=(-1, 4 * 4 * 512))
-        dense1_layer = tf.layers.dense(dense_input, 100, activation=params.dis_dense_activation,
-                                       bias_initializer=params.dis_bias_initializer, name='dense1')
-        # prediction
-        dense2_layer = tf.layers.dense(dense1_layer, 2, name='dense2')
-    return dense2_layer
+        output_layer = tf.layers.dense(dense_input, 2, activation=params.dis_dense_activation,
+                                       bias_initializer=params.dis_bias_initializer, name='output')
+    return output_layer
