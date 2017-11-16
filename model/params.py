@@ -8,8 +8,6 @@ gen_bias_initializer = tf.zeros_initializer
 dis_conv_activation = tf.nn.leaky_relu
 dis_dense_activation = tf.nn.tanh
 dis_bias_initializer = tf.zeros_initializer
-# optimizer used in  model
-opt = tf.train.AdamOptimizer
 
 # the number of channels
 channel = 1
