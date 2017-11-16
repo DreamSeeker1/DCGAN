@@ -88,52 +88,67 @@ with graph.as_default():
 
 # define the session to run the training process
 with tf.Session(graph=graph) as sess:
-    summary_writer = tf.summary.FileWriter('./Graph', sess.graph)
-    # define step
-    step = 0
-    init = tf.global_variables_initializer()
-    sess.run(init)
-    for epoch in range(params.epoch):
-        sess.run(iterator.initializer)
-        epoch_end = False
-        while True:
-            pics_in = None
-            gen_in = None
-            for i in range(params.k):
-                # train the discriminator
-                try:
-                    pics_in = sess.run(next_element)
-                    # train the generator, use 100 dimensional uniform distribution
-                    gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
-                    _ = sess.run([dis_opt_op], {gen_input: gen_in, pics_input: pics_in})
-                except tf.errors.OutOfRangeError:
-                    epoch_end = True
+    if params.isTrain:
+        summary_writer = tf.summary.FileWriter('./Graph', sess.graph)
+        # define step
+        step = 0
+        init = tf.global_variables_initializer()
+        sess.run(init)
+        for epoch in range(params.epoch):
+            sess.run(iterator.initializer)
+            epoch_end = False
+            while True:
+                pics_in = None
+                gen_in = None
+                for i in range(params.k):
+                    # train the discriminator
+                    try:
+                        pics_in = sess.run(next_element)
+                        # train the generator, use 100 dimensional uniform distribution
+                        gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
+                        _ = sess.run([dis_opt_op], {gen_input: gen_in, pics_input: pics_in})
+                    except tf.errors.OutOfRangeError:
+                        epoch_end = True
+                        break
+                if epoch_end:
                     break
-            if epoch_end:
-                break
-            # train the generator, use 100 dimensional uniform distribution
-            gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
-            summary, _ = sess.run([merged, gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
-            step += 1
-            # log summary
-            summary_writer.add_summary(summary, step)
+                # train the generator, use 100 dimensional uniform distribution
+                gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
+                summary, _ = sess.run([merged, gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
+                step += 1
+                # log summary
+                summary_writer.add_summary(summary, step)
 
-            if step % params.display_step == 0:
-                gen_loss, dis_loss, pics, err_rate = sess.run(
-                    [generator_loss, discriminator_loss, gen_pics, error_rate],
-                    {gen_input: gen_in, pics_input: pics_in})
-                pic = ((pics[0] + 1.) / 2. * 255.).astype('uint8')
-                if mparams.channel == 3:
-                    img = Image.fromarray(pic, 'RGB')
-                else:
-                    pic.resize(64, 64)
-                    img = Image.fromarray(pic, 'L')
-                img.save(os.path.join(params.output_folder, 'Epoch-{}-Step-{}.jpg'.format(epoch, step)))
-                print(
-                    'Epoch: {}, Step: {}, Generator Loss: {:.4f}, Discriminator Loss:{:.4f}, Error Rate: {:.2%}'.format(
-                        epoch, step,
-                        gen_loss,
-                        dis_loss,
-                        err_rate
-                    ))
-        saver.save(sess, save_path='./checkpoint/model.ckpt', global_step=step)
+                if step % params.display_step == 0:
+                    gen_loss, dis_loss, pics, err_rate = sess.run(
+                        [generator_loss, discriminator_loss, gen_pics, error_rate],
+                        {gen_input: gen_in, pics_input: pics_in})
+                    pic = ((pics[0] + 1.) / 2. * 255.).astype('uint8')
+                    if mparams.channel == 3:
+                        img = Image.fromarray(pic, 'RGB')
+                    else:
+                        pic.resize(64, 64)
+                        img = Image.fromarray(pic, 'L')
+                    img.save(os.path.join(params.output_folder, 'Epoch-{}-Step-{}.jpg'.format(epoch, step)))
+                    print(
+                        'Epoch: {}, Step: {}, Generator Loss: {:.4f}, Discriminator Loss:{:.4f}, Error Rate: {:.2%}'.format(
+                            epoch, step,
+                            gen_loss,
+                            dis_loss,
+                            err_rate
+                        ))
+            saver.save(sess, save_path='./checkpoint/model.ckpt', global_step=step)
+    else:
+        gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
+        latest_checkpoint = tf.train.latest_checkpoint('./checkpoint/')
+        saver.restore(sess, latest_checkpoint)
+        gen_pics = sess.run(gen_pics, {gen_input: gen_in})
+        gen_pics = ((gen_pics + 1.) / 2. * 255.).astype('uint8')
+        for i in range(len(gen_pics)):
+            pic = gen_pics[i]
+            if mparams.channel == 3:
+                img = Image.fromarray(pic, 'RGB')
+            else:
+                pic.resize(64, 64)
+                img = Image.fromarray(pic, 'L')
+            img.save(os.path.join(params.output_folder, 'Generated-{}.jpg'.format(i + 1)))
