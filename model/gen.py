@@ -21,20 +21,20 @@ def generator(input_batch):
         # convolution transpose
         conv1_trans = tf.layers.conv2d_transpose(reshape_input, filters=512, kernel_size=5, strides=(2, 2),
                                                  padding='same',
-                                                 bias_initializer=tf.truncated_normal_initializer,
+                                                 bias_initializer=params.gen_bias_initializer,
                                                  activation=params.gen_activation, name='conv1_trans')
         conv2_trans = tf.layers.conv2d_transpose(conv1_trans, filters=256, kernel_size=5, strides=(2, 2),
                                                  padding='same',
-                                                 bias_initializer=tf.truncated_normal_initializer,
+                                                 bias_initializer=params.gen_bias_initializer,
                                                  activation=params.gen_activation, name='conv2_trans')
         conv3_trans = tf.layers.conv2d_transpose(conv2_trans, filters=128, kernel_size=5, strides=(2, 2),
                                                  padding='same',
-                                                 bias_initializer=tf.truncated_normal_initializer,
+                                                 bias_initializer=params.gen_bias_initializer,
                                                  activation=params.gen_activation, name='conv3_trans')
         # use Tanh in output layer
         pics_batch = tf.layers.conv2d_transpose(conv3_trans, filters=params.channel, kernel_size=5, strides=(2, 2),
                                                 padding='same',
-                                                bias_initializer=tf.truncated_normal_initializer,
+                                                bias_initializer=params.gen_bias_initializer,
                                                 activation=params.gen_activation, name='conv4_trans')
         pics_batch = params.gen_output_activation(pics_batch)
         return pics_batch
