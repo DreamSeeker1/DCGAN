@@ -15,3 +15,7 @@ k = 1
 # optimizer used during training
 opt = tf.train.AdamOptimizer
 beta1 = 0.5
+
+# dropout prob
+dropout_prob_gen = 0.5
+dropout_prob_dis = 0.5

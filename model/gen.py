@@ -4,10 +4,11 @@ import tensorflow as tf
 import model.params as params
 
 
-def generator(input_batch):
+def generator(input_batch, drop_prob):
     """Generator
     Args:
          input_batch: the input batch, assume the size is [batch_size, 100]
+         drop_prob: dropout probability
     Returns:
         pics_batch: the picture generator generates
     """
@@ -23,16 +24,19 @@ def generator(input_batch):
                                                  padding='same',
                                                  bias_initializer=params.gen_bias_initializer,
                                                  activation=params.gen_activation, name='conv1_trans')
-        conv2_trans = tf.layers.conv2d_transpose(conv1_trans, filters=256, kernel_size=5, strides=(2, 2),
+        conv1_trans_drop = tf.nn.dropout(conv1_trans, keep_prob=1 - drop_prob)
+        conv2_trans = tf.layers.conv2d_transpose(conv1_trans_drop, filters=256, kernel_size=5, strides=(2, 2),
                                                  padding='same',
                                                  bias_initializer=params.gen_bias_initializer,
                                                  activation=params.gen_activation, name='conv2_trans')
-        conv3_trans = tf.layers.conv2d_transpose(conv2_trans, filters=128, kernel_size=5, strides=(2, 2),
+        conv2_trans_drop = tf.nn.dropout(conv2_trans, keep_prob=1 - drop_prob)
+        conv3_trans = tf.layers.conv2d_transpose(conv2_trans_drop, filters=128, kernel_size=5, strides=(2, 2),
                                                  padding='same',
                                                  bias_initializer=params.gen_bias_initializer,
                                                  activation=params.gen_activation, name='conv3_trans')
+        conv3_trans_drop = tf.nn.dropout(conv3_trans, keep_prob=1 - drop_prob)
         # use Tanh in output layer
-        pics_batch = tf.layers.conv2d_transpose(conv3_trans, filters=params.channel, kernel_size=5, strides=(2, 2),
+        pics_batch = tf.layers.conv2d_transpose(conv3_trans_drop, filters=params.channel, kernel_size=5, strides=(2, 2),
                                                 padding='same',
                                                 bias_initializer=params.gen_bias_initializer,
                                                 activation=params.gen_activation, name='conv4_trans')

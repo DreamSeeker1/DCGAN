@@ -40,13 +40,15 @@ with graph.as_default():
     # define the place holder for the input.
     gen_input = tf.placeholder(dtype=tf.float32, shape=(None, 100))
     pics_input = tf.placeholder(dtype=tf.float32, shape=(None, 64, 64, mparams.channel))
+    drop_gen = tf.placeholder(dtype=tf.float32, shape=(), name='drop_prob_gen')
+    drop_dis = tf.placeholder(dtype=tf.float32, shape=(), name='drop_prob_dis')
     # generate pictures
-    gen_pics = model.gen.generator(gen_input)
+    gen_pics = model.gen.generator(gen_input, drop_gen)
     # add labels to real and fake data.
     label = get_labels(gen_pics, pics_input)
     # go through the discriminator
-    dis_logits_fake = model.dis.discriminator(gen_pics, reuse=None)
-    dis_logits_real = model.dis.discriminator(pics_input, reuse=True)
+    dis_logits_fake = model.dis.discriminator(gen_pics, reuse=None, drop_prob=drop_dis)
+    dis_logits_real = model.dis.discriminator(pics_input, reuse=True, drop_prob=drop_dis)
     dis_logits = tf.concat([dis_logits_fake, dis_logits_real], axis=0)
     # compute discriminator loss
     discriminator_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=dis_logits))
@@ -107,7 +109,9 @@ with tf.Session(graph=graph) as sess:
                         pics_in = sess.run(next_element)
                         # train the generator, use 100 dimensional uniform distribution
                         gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
-                        _ = sess.run([dis_opt_op], {gen_input: gen_in, pics_input: pics_in})
+                        _ = sess.run([dis_opt_op],
+                                     {gen_input: gen_in, pics_input: pics_in, drop_gen: params.dropout_prob_gen,
+                                      drop_dis: params.dropout_prob_dis})
                     except tf.errors.OutOfRangeError:
                         epoch_end = True
                         break
@@ -115,7 +119,14 @@ with tf.Session(graph=graph) as sess:
                     break
                 # train the generator, use 100 dimensional uniform distribution
                 gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
-                summary, _ = sess.run([merged, gen_opt_op], {gen_input: gen_in, pics_input: pics_in})
+                _ = sess.run(gen_opt_op, {gen_input: gen_in, pics_input: pics_in,
+                                          drop_gen: params.dropout_prob_gen,
+                                          drop_dis: params.dropout_prob_dis
+                                          })
+                summary = sess.run(merged, {gen_input: gen_in, pics_input: pics_in,
+                                            drop_gen: params.dropout_prob_gen,
+                                            drop_dis: 0.
+                                            })
                 step += 1
                 # log summary
                 summary_writer.add_summary(summary, step)
@@ -123,7 +134,8 @@ with tf.Session(graph=graph) as sess:
                 if step % params.display_step == 0:
                     gen_loss, dis_loss, pics, err_rate = sess.run(
                         [generator_loss, discriminator_loss, gen_pics, error_rate],
-                        {gen_input: gen_in, pics_input: pics_in})
+                        {gen_input: gen_in, pics_input: pics_in, drop_gen: params.dropout_prob_gen,
+                         drop_dis: 0.})
                     pic = ((pics[0] + 1.) / 2. * 255.).astype('uint8')
                     if mparams.channel == 3:
                         img = Image.fromarray(pic, 'RGB')
@@ -143,7 +155,7 @@ with tf.Session(graph=graph) as sess:
         gen_in = np.random.uniform(-1., 1., size=(params.batch_size, 100))
         latest_checkpoint = tf.train.latest_checkpoint('./checkpoint/')
         saver.restore(sess, latest_checkpoint)
-        gen_pics = sess.run(gen_pics, {gen_input: gen_in})
+        gen_pics = sess.run(gen_pics, {gen_input: gen_in, drop_gen: params.dropout_prob_gen})
         gen_pics = ((gen_pics + 1.) / 2. * 255.).astype('uint8')
         for i in range(len(gen_pics)):
             pic = gen_pics[i]
