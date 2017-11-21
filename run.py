@@ -64,13 +64,13 @@ with graph.as_default():
         with tf.variable_scope('train_discriminator'):
             # define the optimizer used to train the discriminator
             dis_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Discriminator')
-            dis_opt = params.opt(params.lr)
+            dis_opt = params.opt(params.lr, beta1=params.beta1)
             dis_grads_and_vars = dis_opt.compute_gradients(discriminator_loss, var_list=dis_vars)
             dis_opt_op = dis_opt.apply_gradients(dis_grads_and_vars)
         with tf.variable_scope('train_generator'):
             # define the optimizer used to train the generator
             gen_vars = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES, scope='Generator')
-            gen_opt = params.opt(params.lr)
+            gen_opt = params.opt(params.lr, beta1=params.beta1)
             gen_grads_and_vars = dis_opt.compute_gradients(generator_loss, var_list=gen_vars)
             gen_opt_op = gen_opt.apply_gradients(gen_grads_and_vars)
 

@@ -10,4 +10,4 @@ dis_dense_activation = None
 dis_bias_initializer = tf.zeros_initializer
 
 # the number of channels
-channel = 1
+channel = 3

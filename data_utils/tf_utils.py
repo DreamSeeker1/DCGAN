@@ -13,7 +13,11 @@ import model.params as mparams
 def _parse_function(filename):
     image_string = tf.read_file(filename)
     image_decoded = tf.image.decode_jpeg(image_string, mparams.channel)
-    image_resized = tf.image.resize_images(image_decoded, [64, 64]) / 255. * 2. - 1.
+    image_shape = tf.cast(tf.shape(image_decoded), dtype=tf.float32)
+    image_cropped = tf.random_crop(image_decoded,
+                                   size=tf.cast([image_shape[0] * 0.9, image_shape[1] * 0.9, image_shape[2]],
+                                                dtype=tf.int32))
+    image_resized = tf.image.resize_images(image_cropped, [64, 64]) / 255. * 2. - 1.
     return image_resized
 
 
