@@ -22,8 +22,8 @@ def get_labels(gen_pics, real_pics):
     Returns:
         labels: a tensor of 0 and 1, 0 for generated, 1 for real pics
     """
-    gen_pics_label = tf.zeros(shape=[tf.shape(gen_pics)[0], ], dtype=tf.int32)
-    real_pics_label = tf.ones(shape=[tf.shape(real_pics)[0], ], dtype=tf.int32)
+    gen_pics_label = tf.zeros(shape=[tf.shape(gen_pics)[0], 1], dtype=tf.float32)
+    real_pics_label = tf.ones(shape=[tf.shape(real_pics)[0], 1], dtype=tf.float32)
     labels = tf.concat(
         [gen_pics_label, real_pics_label], axis=0)
     return labels
@@ -49,12 +49,12 @@ with graph.as_default():
     dis_logits_real = model.dis.discriminator(pics_input, reuse=True)
     dis_logits = tf.concat([dis_logits_fake, dis_logits_real], axis=0)
     # compute discriminator loss
-    discriminator_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=label, logits=dis_logits))
+    discriminator_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=dis_logits))
     # compute generator loss
     # in this part we mark the label of fake pics as true, go through the discriminator and calculate loss
-    fake_labels = tf.ones(shape=(tf.shape(gen_pics)[0],), dtype=tf.int32)
-    generator_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=fake_labels,
-                                                                                   logits=dis_logits_fake))
+    fake_labels = tf.ones(shape=(tf.shape(gen_pics)[0], 1), dtype=tf.float32)
+    generator_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=fake_labels,
+                                                                            logits=dis_logits_fake))
 
     # define the saver to save the variables
     saver = tf.train.Saver(max_to_keep=params.max_model_number)
@@ -76,8 +76,9 @@ with graph.as_default():
 
     # the prediction accuracy of the discriminator, when equals to 50%, it can't distinguish
     # real and fake
-    prediction_result = tf.equal(tf.argmax(dis_logits, 1, output_type=tf.int32),
-                                 label)
+    prediction = tf.cast(tf.greater(tf.sigmoid(dis_logits), tf.tile([0.5], [tf.shape(dis_logits)[0]])),
+                         dtype=tf.float32)
+    prediction_result = tf.equal(prediction, label)
     error_rate = 1 - tf.reduce_mean(tf.cast(prediction_result, tf.float32))
 
     # add summary
