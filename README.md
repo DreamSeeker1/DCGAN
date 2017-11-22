@@ -79,6 +79,11 @@ Generative Model 也就是 Generator，以下简称 G，对于给定的数据$x$
 
 `model/params.py`中记录了一些与模型相关的参数，如使用的激活函数，初始化使用的分布，图片的通道数量等。根目录下的`params.py`中记录了与训练相关的参数，如使用的优化算法，将`isTrain`设置为1表示对模型进行训练。
 
+将参数调节完成以后可以输入以下命令对模型进行训练:
+```python
+python run.py
+```
+
 ### 训练技巧
 
 #### 归一化输入
@@ -94,6 +99,17 @@ Generative Model 也就是 Generator，以下简称 G，对于给定的数据$x$
 #### 避免稀疏梯度： RelU, MaxPool
 * 在 G 和 D 中使用LeakyRelu
 * 在 D 中使用 Average Pooling 来替代 MaxPool
+
+#### 使用 Adam Optimizer
+可以使用SGD训练Discriminator，使用Adam训练Generator
+
+#### 使用 Dropout
+
+在 Generator 训练和生成图片的时候都使用 Dropout，dropout概率设置为0.5左右。
+
+## 使用训练好的模型
+模型训练好以后，只要将根目录中的`params.py`中的`isTrain`的值修改为0，然后再次运行`run.py`即可。
+
 
 # 训练结果
 
