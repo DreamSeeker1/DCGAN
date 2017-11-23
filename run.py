@@ -33,13 +33,13 @@ def get_labels(gen_pics, real_pics):
 graph = tf.Graph()
 with graph.as_default():
     # load data
-    dataset = data_utils.tf_utils.get_pics('./pics').batch(params.batch_size).shuffle(2 * params.batch_size)
+    dataset = data_utils.tf_utils.get_pics('./pics').batch(params.batch_size)
     iterator = dataset.make_initializable_iterator()
     next_element = iterator.get_next()
 
     # define the place holder for the input.
-    gen_input = tf.placeholder(dtype=tf.float32, shape=(None, 100))
-    pics_input = tf.placeholder(dtype=tf.float32, shape=(None, 64, 64, mparams.channel))
+    gen_input = tf.placeholder(dtype=tf.float32, shape=(None, 100), name="noise")
+    pics_input = tf.placeholder(dtype=tf.float32, shape=(None, 64, 64, mparams.channel), name="real_pics")
     drop_gen = tf.placeholder(dtype=tf.float32, shape=(), name='drop_prob_gen')
     drop_dis = tf.placeholder(dtype=tf.float32, shape=(), name='drop_prob_dis')
     # generate pictures
