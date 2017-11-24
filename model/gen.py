@@ -55,6 +55,6 @@ def generator(input_batch, drop_prob):
         pics_batch = tf.layers.conv2d_transpose(conv3_trans_drop, filters=params.channel, kernel_size=5, strides=(2, 2),
                                                 padding='same',
                                                 bias_initializer=params.gen_bias_initializer,
-                                                activation=gen_act, name='conv4_trans')
+                                                name='conv4_trans')
         pics_batch = output_act(pics_batch)
         return pics_batch

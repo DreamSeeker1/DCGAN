@@ -48,6 +48,7 @@ def discriminator(input_pics, reuse, drop_prob):
         # reshape and project
         dense_input = tf.reshape(conv4_layer, shape=(-1, 4 * 4 * 512))
         dense_input_drop = tf.nn.dropout(dense_input, keep_prob=1 - drop_prob)
+        # output logits
         output_layer = tf.layers.dense(dense_input_drop, 1,
                                        bias_initializer=params.dis_bias_initializer, name='output')
     return output_layer
