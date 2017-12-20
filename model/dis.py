@@ -19,10 +19,10 @@ def discriminator(input_pics, reuse, drop_prob):
     """
     with tf.variable_scope('Discriminator', reuse=reuse):
         # define the batch normalization layers
-        bn0 = bn(name='bn0')
-        bn1 = bn(name='bn1')
-        bn2 = bn(name='bn2')
-        bn3 = bn(name='bn3')
+        bn0 = bn(name='bn0', renorm=True)
+        bn1 = bn(name='bn1', renorm=True)
+        bn2 = bn(name='bn2', renorm=True)
+        bn3 = bn(name='bn3', renorm=True)
 
         # convolution layers and batch norm layers
         conv1_layer = tf.layers.conv2d(input_pics, filters=64, kernel_size=5,

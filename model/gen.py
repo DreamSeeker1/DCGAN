@@ -19,10 +19,10 @@ def generator(input_batch, drop_prob):
 
     with tf.variable_scope('Generator'):
         # define batch normalization layers
-        bn0 = bn(name='bn0')
-        bn1 = bn(name='bn1')
-        bn2 = bn(name='bn2')
-        bn3 = bn(name='bn3')
+        bn0 = bn(name='bn0', renorm=True)
+        bn1 = bn(name='bn1', renorm=True)
+        bn2 = bn(name='bn2', renorm=True)
+        bn3 = bn(name='bn3', renorm=True)
 
         # project and reshape
         layer1 = tf.layers.dense(input_batch, units=4 * 4 * 1024)

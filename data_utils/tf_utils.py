@@ -12,7 +12,7 @@ import model.params as mparams
 # to a fixed shape.
 def _parse_function(filename):
     image_string = tf.read_file(filename)
-    image_decoded = tf.image.decode_jpeg(image_string, mparams.channel)
+    image_decoded = tf.image.decode_image(image_string, mparams.channel)
     image_shape = tf.cast(tf.shape(image_decoded), dtype=tf.float32)
     image_cropped = tf.random_crop(image_decoded,
                                    size=tf.cast([image_shape[0] * 0.9, image_shape[1] * 0.9, image_shape[2]],
